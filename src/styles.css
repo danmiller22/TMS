@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ========== THEME TOKENS (accent from logo) ========== */
+:root {
+  --accent: #ff3b30;
+  --accent-fg: #ffffff;
+
+  /* Light */
+  --bg: #f3f5f9;       /* page background */
+  --fg: #0b0c10;       /* text */
+  --card: #ffffff;     /* cards / surfaces */
+  --border: #d6dbe4;   /* borders */
+  --muted: #eef1f6;    /* top/nav surface */
+}
+
+.dark {
+  --accent: #ff3b30;
+  --accent-fg: #ffffff;
+
+  /* Dark */
+  --bg: #0f1115;
+  --fg: #eef2f7;
+  --card: #171a21;
+  --border: #262b36;
+  --muted: #131720;
+}
+
+html, body, #root {
+  height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+/* Inputs & placeholders */
+input, select, textarea { color: var(--fg); }
+::placeholder { color: color-mix(in srgb, var(--fg) 45%, transparent); }
+
+/* ---- Header with subtle gradient ---- */
+.app-header {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--accent) 10%, var(--muted)) 0%, var(--muted) 40%, transparent 100%),
+    var(--bg);
+  backdrop-filter: blur(8px);
+}
+
+/* ---- Cards / Glass ---- */
+.glass {
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  backdrop-filter: saturate(140%) blur(10px);
+  border: 1px solid var(--border);
+  box-shadow:
+    0 6px 18px rgba(0,0,0,.06),
+    0 1px 0 rgba(255,255,255,.06) inset;
+}
+
+@media (prefers-color-scheme: light) {
+  .glass {
+    box-shadow:
+      0 8px 28px rgba(16, 24, 40, .08),
+      0 1px 0 rgba(255,255,255,.8) inset;
+  }
+}
+
+/* ---- Buttons ---- */
+.btn { @apply inline-flex items-center justify-center rounded-xl px-3 py-2 font-semibold transition border border-transparent; }
+.btn-ghost { @apply bg-transparent hover:bg-white/10; }
+.btn-primary { background: var(--accent); color: var(--accent-fg); }
+.btn-primary:hover { filter: brightness(.95); }
+.btn-primary:active { transform: translateY(.5px) scale(.995); }
+
+/* ---- Pills/Chips ---- */
+.chip { @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs border border-border bg-background; }
+
+/* ---- Inputs ---- */
+.input {
+  @apply rounded-xl border px-3 py-2;
+  background: var(--card);
+  border-color: var(--border);
+  color: var(--fg);
+}
+.input:focus { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
+
+/* ---- Nav tabs contrast in light mode ---- */
+.nav-pill { @apply px-3 py-2 rounded-lg font-bold transition; }
+.nav-pill.idle { color: color-mix(in srgb, var(--fg) 70%, transparent); }
+.nav-pill.idle:hover { @apply bg-white/50; color: var(--fg); }
+.nav-pill.active { @apply bg-white; color: var(--fg); border: 1px solid var(--border); }
+.dark .nav-pill.active { @apply bg-white/10; color: var(--fg); border-color: var(--border); }

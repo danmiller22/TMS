@@ -1,0 +1,1 @@
+export function Card({children,className}:{children:any;className?:string}){ return <div className={`rounded-2xl border border-border p-4 glass ${className??''}`}>{children}</div> }
