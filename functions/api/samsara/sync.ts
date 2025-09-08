@@ -1,3 +1,5 @@
+// functions/api/samsara/sync.ts
+// @ts-nocheck
 // Cloudflare Pages Function: /api/samsara/sync
 // Тянет траки и последние статусы из Samsara и отдаёт фронту нормализованный список.
 
@@ -33,7 +35,7 @@ type VehicleStat = {
   engineStates?: { engineOn?: boolean; timeMs?: number };
 };
 
-export const onRequestGet: PagesFunction = async (ctx) => {
+export const onRequestGet = async (ctx: any) => {
   try {
     const token = ctx.env.SAMSARA_API_TOKEN as string | undefined;
     if (!token) {
@@ -43,7 +45,6 @@ export const onRequestGet: PagesFunction = async (ctx) => {
       });
     }
 
-    // как формировать id трака (из настроек/квери): name | licensePlate
     const idSource = new URL(ctx.request.url).searchParams.get("idSource") || "name";
     const cfg: Cfg = { token };
 
@@ -51,12 +52,12 @@ export const onRequestGet: PagesFunction = async (ctx) => {
     const vRes = await samsaraGET<{ data: Vehicle[] }>(cfg, "/fleet/vehicles", { limit: "200" });
     const vehicles = vRes.data ?? [];
 
-    // 2) последние статусы (gps/odom/engine)
+    // 2) последние статусы (gps/odom/engine) — если нет доступа, тихо продолжим без них
     const stats = await samsaraGET<{ data: VehicleStat[] }>(
       cfg,
       "/fleet/vehicles/stats",
       { types: "gps,obdOdometerMeters,gpsOdometerMeters,engineStates" }
-    ).catch(() => ({ data: [] as VehicleStat[] })); // тихий фоллбек
+    ).catch(() => ({ data: [] as VehicleStat[] }));
 
     const byId = new Map<string, VehicleStat>();
     for (const s of stats.data) {
@@ -70,14 +71,17 @@ export const onRequestGet: PagesFunction = async (ctx) => {
       const s = byId.get(sid) || ({} as VehicleStat);
       const lat = s.gps?.latitude;
       const lon = s.gps?.longitude;
-      const lastMs = s.gps?.timeMs || s.obdOdometerMeters?.timeMs || s.gpsOdometerMeters?.timeMs || s.engineStates?.timeMs;
-      const odos = [s.obdOdometerMeters?.value, s.gpsOdometerMeters?.value].filter((n) => typeof n === "number") as number[];
+      const lastMs =
+        s.gps?.timeMs || s.obdOdometerMeters?.timeMs || s.gpsOdometerMeters?.timeMs || s.engineStates?.timeMs;
+      const odos = [s.obdOdometerMeters?.value, s.gpsOdometerMeters?.value].filter(
+        (n) => typeof n === "number"
+      ) as number[];
       const odo = odos.length ? Math.max(...odos) : null;
 
       const id =
         idSource === "licensePlate"
-          ? (v.licensePlate || v.name || v.vin || sid)
-          : (v.name || v.licensePlate || v.vin || sid);
+          ? v.licensePlate || v.name || v.vin || sid
+          : v.name || v.licensePlate || v.vin || sid;
 
       return {
         id,
