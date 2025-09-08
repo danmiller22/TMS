@@ -1,8 +1,13 @@
 // src/ui/screens/Trucks.tsx
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import useTms, { Truck } from "../../store/tms";
 import { syncSamsara } from "../../lib/samsara";
-import { listTrucks, upsertTrucks as dbUpsertTrucks, upsertTruck as dbUpsertTruck, deleteTruck as dbDeleteTruck } from "../../services/db";
+import {
+  listTrucks,
+  upsertTrucks as dbUpsertTrucks,
+  upsertTruck as dbUpsertTruck,
+  deleteTruck as dbDeleteTruck,
+} from "../../services/db";
 
 function fmtOdo(m?: number | null, units: "imperial" | "metric" = "imperial") {
   if (m == null) return "-";
@@ -15,6 +20,19 @@ const Trucks: React.FC = () => {
   const [edit, setEdit] = useState<Truck | null>(null);
   const [busy, setBusy] = useState(false);
   const units = settings?.units ?? "imperial";
+
+  // --- авто-загрузка из БД при входе на страницу ---
+  useEffect(() => {
+    (async () => {
+      try {
+        const rows = await listTrucks();
+        if (rows.length) upsertManyTrucks(rows);
+      } catch {
+        // молча, чтобы не мешать пользователю
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const list = useMemo(() => {
     const n = q.trim().toLowerCase();
@@ -33,7 +51,7 @@ const Trucks: React.FC = () => {
       const idSource = settings?.samsaraIdSource ?? "name";
       const data = await syncSamsara(idSource);
       upsertManyTrucks(data.trucks || []);
-      await dbUpsertTrucks(data.trucks || []); // сразу сохраняем в БД
+      await dbUpsertTrucks(data.trucks || []); // сохраняем в БД
       alert(`Synced & saved ${data.trucks?.length ?? 0} trucks`);
     } catch (e: any) {
       alert(`Sync error: ${e?.message || e}`);
@@ -95,47 +113,27 @@ const Trucks: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold">Trucks</h1>
+        <h1 className="text-xl font-semibold">Trucks <span className="text-xs opacity-60 align-middle">• DB linked</span></h1>
         <div className="flex flex-wrap gap-2">
-          <input
-            className="input"
-            placeholder="Search…"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
+          <input className="input" placeholder="Search…" value={q} onChange={(e) => setQ(e.target.value)} />
           <button className="btn" disabled={busy} onClick={loadFromDb}>Load from DB</button>
           <button className="btn" disabled={busy} onClick={saveAllToDb}>Save all to DB</button>
-          <button className="btn btn-primary" disabled={busy} onClick={syncFromSamsara}>
-            Sync from Samsara
-          </button>
-          <button className="btn" onClick={() => setEdit({ id: "", vin: "", make: "", odo: 0 })}>
-            Add
-          </button>
+          <button className="btn btn-primary" disabled={busy} onClick={syncFromSamsara}>Sync from Samsara</button>
+          <button className="btn" onClick={() => setEdit({ id: "", vin: "", make: "", odo: 0 })}>Add</button>
         </div>
       </div>
 
       {/* List */}
       <div className="grid gap-3">
         {list.map((t) => (
-          <div
-            key={t.id}
-            className="p-4 rounded-xl border bg-white shadow flex items-center justify-between"
-          >
+          <div key={t.id} className="p-4 rounded-xl border bg-white shadow flex items-center justify-between">
             <div>
-              <div className="font-semibold">
-                {t.id} • {t.make ?? "-"}
-              </div>
-              <div className="text-sm opacity-70">
-                VIN: {t.vin ?? "-"} • Plate: {t.plate ?? "-"} • Odo: {fmtOdo(t.odo, units)}
-              </div>
+              <div className="font-semibold">{t.id} • {t.make ?? "-"}</div>
+              <div className="text-sm opacity-70">VIN: {t.vin ?? "-"} • Plate: {t.plate ?? "-"} • Odo: {fmtOdo(t.odo, units)}</div>
             </div>
             <div className="flex gap-2">
-              <button className="btn" onClick={() => setEdit(t)}>
-                Edit
-              </button>
-              <button className="btn" onClick={() => removeOne(t.id)}>
-                Delete
-              </button>
+              <button className="btn" onClick={() => setEdit(t)}>Edit</button>
+              <button className="btn" onClick={() => removeOne(t.id)}>Delete</button>
             </div>
           </div>
         ))}
@@ -145,49 +143,15 @@ const Trucks: React.FC = () => {
       {edit && (
         <div className="p-4 rounded-xl border bg-white shadow space-y-2">
           <div className="grid md:grid-cols-5 gap-2">
-            <input
-              className="input"
-              placeholder="ID"
-              value={edit.id}
-              onChange={(e) => setEdit({ ...edit, id: e.target.value })}
-            />
-            <input
-              className="input"
-              placeholder="VIN"
-              value={edit.vin ?? ""}
-              onChange={(e) => setEdit({ ...edit, vin: e.target.value })}
-            />
-            <input
-              className="input"
-              placeholder="Make"
-              value={edit.make ?? ""}
-              onChange={(e) => setEdit({ ...edit, make: e.target.value })}
-            />
-            <input
-              className="input"
-              placeholder="Plate"
-              value={edit.plate ?? ""}
-              onChange={(e) => setEdit({ ...edit, plate: e.target.value })}
-            />
-            <input
-              className="input"
-              type="number"
-              placeholder="Odometer (meters)"
-              value={edit.odo ?? 0}
-              onChange={(e) => setEdit({ ...edit, odo: Number(e.target.value) })}
-            />
+            <input className="input" placeholder="ID" value={edit.id} onChange={(e) => setEdit({ ...edit, id: e.target.value })} />
+            <input className="input" placeholder="VIN" value={edit.vin ?? ""} onChange={(e) => setEdit({ ...edit, vin: e.target.value })} />
+            <input className="input" placeholder="Make" value={edit.make ?? ""} onChange={(e) => setEdit({ ...edit, make: e.target.value })} />
+            <input className="input" placeholder="Plate" value={edit.plate ?? ""} onChange={(e) => setEdit({ ...edit, plate: e.target.value })} />
+            <input className="input" type="number" placeholder="Odometer (meters)" value={edit.odo ?? 0} onChange={(e) => setEdit({ ...edit, odo: Number(e.target.value) })} />
           </div>
           <div className="flex gap-2">
-            <button
-              className="btn btn-primary"
-              disabled={busy}
-              onClick={() => saveOne(edit)}
-            >
-              Save
-            </button>
-            <button className="btn" onClick={() => setEdit(null)}>
-              Cancel
-            </button>
+            <button className="btn btn-primary" disabled={busy} onClick={() => saveOne(edit)}>Save</button>
+            <button className="btn" onClick={() => setEdit(null)}>Cancel</button>
           </div>
         </div>
       )}
