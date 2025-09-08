@@ -1,21 +1,22 @@
 // functions/_middleware.ts
-// Защищаем только /api/* токеном Supabase. Сделано безопасно для Pages:
-// - никакого кода на верхнем уровне, который может падать
-// - jose подгружаем динамически только при обращении к /api
-// - любые ошибки ловим и возвращаем JSON вместо падения воркера
+// @ts-nocheck
+// Безопасная защита только для /api/*
+// - используем context.next() (как требует Cloudflare Pages)
+// - динамически импортируем 'jose'
+// - любые ошибки -> JSON, чтобы воркер не падал
 
-export const onRequest = async (context: any, next: any) => {
+export const onRequest = async (context) => {
   try {
     const url = new URL(context.request.url);
 
-    // Защищаем только API. Для всего остального сразу пропускаем.
+    // защищаем только /api/*
     if (!url.pathname.startsWith("/api/")) {
-      return next();
+      return context.next();
     }
 
     const sbUrl =
       context.env?.VITE_SUPABASE_URL ||
-      context.env?.SUPABASE_URL; // на всякий случай альтернативное имя
+      context.env?.SUPABASE_URL; // альтернативное имя, если так настроено
 
     if (!sbUrl) {
       return new Response(JSON.stringify({ error: "Missing VITE_SUPABASE_URL env" }), {
@@ -34,23 +35,21 @@ export const onRequest = async (context: any, next: any) => {
       });
     }
 
-    // Подгружаем jose только когда реально нужен (/api/*)
+    // импортируем jose только при обращении к /api/*
     const { createRemoteJWKSet, jwtVerify } = await import("jose");
-
     const JWKS = createRemoteJWKSet(new URL(`${sbUrl}/auth/v1/.well-known/jwks.json`));
 
     await jwtVerify(token, JWKS, {
       issuer: `${sbUrl}/auth/v1`,
     });
 
-    // Всё ок — пускаем к реальному хендлеру
-    return next();
-  } catch (err: any) {
-    // НИЧЕГО не бросаем наверх — всегда возвращаем JSON, чтобы воркер не падал (и не было 1101)
+    // токен валиден — пускаем дальше
+    return context.next();
+  } catch (err) {
     return new Response(
       JSON.stringify({
         error: "Auth middleware error",
-        detail: typeof err?.message === "string" ? err.message : String(err),
+        detail: err?.message ?? String(err),
       }),
       { status: 401, headers: { "content-type": "application/json" } }
     );
