@@ -9,6 +9,12 @@
 
   <body class="bg-background text-foreground">
     <div id="root"></div>
+    <script>
+      // Provide runtime fallbacks for envs so the app works
+      // even if import.meta.env is not available yet.
+      window.VITE_SUPABASE_URL = window.VITE_SUPABASE_URL || "%VITE_SUPABASE_URL%";
+      window.VITE_SUPABASE_ANON_KEY = window.VITE_SUPABASE_ANON_KEY || "%VITE_SUPABASE_ANON_KEY%";
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

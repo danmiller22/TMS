@@ -37,7 +37,7 @@ type VehicleStat = {
 
 export const onRequestGet = async (ctx: any) => {
   try {
-    const token = ctx.env.SAMSARA_API_TOKEN as string | undefined;
+    const token = (ctx.env.SAMSARA_API_TOKEN || ctx.env.VITE_SAMSARA_API_TOKEN) as string | undefined;
     if (!token) {
       return new Response(JSON.stringify({ error: "Missing SAMSARA_API_TOKEN" }), {
         status: 500,
