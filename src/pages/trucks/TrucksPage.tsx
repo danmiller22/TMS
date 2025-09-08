@@ -1,4 +1,4 @@
-// src/pages/trucks/Trucks.tsx
+// src/pages/trucks/TrucksPage.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import useTms, { Truck } from "../../store/tms";
 import { syncSamsara } from "../../lib/samsara";
@@ -14,9 +14,8 @@ function fmtOdo(m?: number | null, units: "imperial" | "metric" = "imperial") {
   return units === "imperial" ? `${(m / 1609.344).toFixed(1)} mi` : `${(m / 1000).toFixed(1)} km`;
 }
 
-const Trucks: React.FC = () => {
-  // МЕТКА для дебага — будет в консоли
-  console.log("✨ Trucks PAGE version (pages/trucks) loaded");
+const TrucksPage: React.FC = () => {
+  console.log("✨ Trucks PAGE v2 (pages/trucks/TrucksPage.tsx) loaded");
 
   const { trucks, upsertTruck, removeTruck, upsertManyTrucks, settings } = useTms();
   const [q, setQ] = useState("");
@@ -24,7 +23,7 @@ const Trucks: React.FC = () => {
   const [busy, setBusy] = useState(false);
   const units = settings?.units ?? "imperial";
 
-  // авто-загрузка из БД при заходе
+  // автозагрузка из БД при заходе
   useEffect(() => {
     (async () => {
       try {
@@ -160,5 +159,4 @@ const Trucks: React.FC = () => {
   );
 };
 
-export { Trucks };
-export default Trucks;
+export default TrucksPage;

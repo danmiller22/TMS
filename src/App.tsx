@@ -5,8 +5,7 @@ import { RequireAuth } from "./lib/auth";
 import { Header } from "./components/Header";
 import { Dashboard } from "./ui/screens/Dashboard";
 
-// ВАЖНО: именно pages/trucks
-import Trucks from "./pages/trucks/Trucks";
+import TrucksPage from "./pages/trucks/TrucksPage"; // <— ВАЖНО!
 
 import Trailers from "./ui/screens/Trailers";
 import Cases from "./ui/screens/Cases";
@@ -28,7 +27,7 @@ const App: React.FC = () => (
       <Route path="/signin" element={<Signin />} />
       <Route element={<RequireAuth><MainLayout /></RequireAuth>}>
         <Route index element={<Dashboard />} />
-        <Route path="/trucks" element={<Trucks />} />
+        <Route path="/trucks" element={<TrucksPage />} />
         <Route path="/trailers" element={<Trailers />} />
         <Route path="/cases" element={<Cases />} />
         <Route path="/analytics" element={<Analytics />} />
