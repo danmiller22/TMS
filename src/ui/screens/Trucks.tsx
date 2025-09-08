@@ -2,6 +2,7 @@
 import React, { useMemo, useState } from "react";
 import useTms, { Truck } from "../../store/tms";
 import { syncSamsara } from "../../lib/samsara";
+import { listTrucks, upsertTrucks as dbUpsertTrucks, upsertTruck as dbUpsertTruck, deleteTruck as dbDeleteTruck } from "../../services/db";
 
 function fmtOdo(m?: number | null, units: "imperial" | "metric" = "imperial") {
   if (m == null) return "-";
@@ -12,6 +13,7 @@ const Trucks: React.FC = () => {
   const { trucks, upsertTruck, removeTruck, upsertManyTrucks, settings } = useTms();
   const [q, setQ] = useState("");
   const [edit, setEdit] = useState<Truck | null>(null);
+  const [busy, setBusy] = useState(false);
   const units = settings?.units ?? "imperial";
 
   const list = useMemo(() => {
@@ -26,13 +28,67 @@ const Trucks: React.FC = () => {
   }, [trucks, q]);
 
   async function syncFromSamsara() {
+    setBusy(true);
     try {
       const idSource = settings?.samsaraIdSource ?? "name";
       const data = await syncSamsara(idSource);
       upsertManyTrucks(data.trucks || []);
-      alert(`Synced ${data.trucks?.length ?? 0} trucks`);
+      await dbUpsertTrucks(data.trucks || []); // сразу сохраняем в БД
+      alert(`Synced & saved ${data.trucks?.length ?? 0} trucks`);
     } catch (e: any) {
       alert(`Sync error: ${e?.message || e}`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function loadFromDb() {
+    setBusy(true);
+    try {
+      const rows = await listTrucks();
+      upsertManyTrucks(rows);
+      alert(`Loaded ${rows.length} trucks from DB`);
+    } catch (e: any) {
+      alert(`Load error: ${e?.message || e}`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveAllToDb() {
+    setBusy(true);
+    try {
+      await dbUpsertTrucks(trucks);
+      alert(`Saved ${trucks.length} trucks to DB`);
+    } catch (e: any) {
+      alert(`Save error: ${e?.message || e}`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveOne(t: Truck) {
+    setBusy(true);
+    try {
+      await dbUpsertTruck(t);
+      upsertTruck(t);
+      setEdit(null);
+    } catch (e: any) {
+      alert(`Save error: ${e?.message || e}`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removeOne(id: string) {
+    setBusy(true);
+    try {
+      await dbDeleteTruck(id);
+      removeTruck(id);
+    } catch (e: any) {
+      alert(`Delete error: ${e?.message || e}`);
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -40,14 +96,16 @@ const Trucks: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-xl font-semibold">Trucks</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <input
             className="input"
             placeholder="Search…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
-          <button className="btn btn-primary" onClick={syncFromSamsara}>
+          <button className="btn" disabled={busy} onClick={loadFromDb}>Load from DB</button>
+          <button className="btn" disabled={busy} onClick={saveAllToDb}>Save all to DB</button>
+          <button className="btn btn-primary" disabled={busy} onClick={syncFromSamsara}>
             Sync from Samsara
           </button>
           <button className="btn" onClick={() => setEdit({ id: "", vin: "", make: "", odo: 0 })}>
@@ -75,7 +133,7 @@ const Trucks: React.FC = () => {
               <button className="btn" onClick={() => setEdit(t)}>
                 Edit
               </button>
-              <button className="btn" onClick={() => removeTruck(t.id)}>
+              <button className="btn" onClick={() => removeOne(t.id)}>
                 Delete
               </button>
             </div>
@@ -122,10 +180,8 @@ const Trucks: React.FC = () => {
           <div className="flex gap-2">
             <button
               className="btn btn-primary"
-              onClick={() => {
-                upsertTruck(edit);
-                setEdit(null);
-              }}
+              disabled={busy}
+              onClick={() => saveOne(edit)}
             >
               Save
             </button>

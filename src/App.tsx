@@ -3,9 +3,11 @@ import React from "react";
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { RequireAuth } from "./lib/auth";
 
-import Header from "./components/Header";
+// у Header и Dashboard — именованные экспорты
+import { Header } from "./components/Header";
+import { Dashboard } from "./ui/screens/Dashboard";
 
-import Dashboard from "./ui/screens/Dashboard";
+// остальные можно как default (у них есть и default, и именованные)
 import Trucks from "./ui/screens/Trucks";
 import Trailers from "./ui/screens/Trailers";
 import Cases from "./ui/screens/Cases";
@@ -17,7 +19,9 @@ import Signin from "./ui/screens/Signin";
 const MainLayout: React.FC = () => (
   <>
     <Header />
-    <div className="p-4 max-w-6xl mx-auto"><Outlet /></div>
+    <div className="p-4 max-w-6xl mx-auto">
+      <Outlet />
+    </div>
   </>
 );
 
@@ -25,7 +29,13 @@ const App: React.FC = () => (
   <BrowserRouter>
     <Routes>
       <Route path="/signin" element={<Signin />} />
-      <Route element={<RequireAuth><MainLayout /></RequireAuth>}>
+      <Route
+        element={
+          <RequireAuth>
+            <MainLayout />
+          </RequireAuth>
+        }
+      >
         <Route index element={<Dashboard />} />
         <Route path="/trucks" element={<Trucks />} />
         <Route path="/trailers" element={<Trailers />} />
