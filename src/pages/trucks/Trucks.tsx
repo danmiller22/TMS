@@ -15,13 +15,16 @@ function fmtOdo(m?: number | null, units: "imperial" | "metric" = "imperial") {
 }
 
 const Trucks: React.FC = () => {
+  // МЕТКА для дебага — будет в консоли
+  console.log("✨ Trucks PAGE version (pages/trucks) loaded");
+
   const { trucks, upsertTruck, removeTruck, upsertManyTrucks, settings } = useTms();
   const [q, setQ] = useState("");
   const [edit, setEdit] = useState<Truck | null>(null);
   const [busy, setBusy] = useState(false);
   const units = settings?.units ?? "imperial";
 
-  // Автозагрузка из БД при заходе
+  // авто-загрузка из БД при заходе
   useEffect(() => {
     (async () => {
       try {
@@ -112,7 +115,7 @@ const Trucks: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-xl font-semibold">
-          Trucks <span className="text-xs opacity-60 align-middle">• DB linked ★</span>
+          Trucks <span className="text-xs opacity-70 align-middle">• DB linked ★</span>
         </h1>
         <div className="flex flex-wrap gap-2">
           <input className="input" placeholder="Search…" value={q} onChange={(e) => setQ(e.target.value)} />

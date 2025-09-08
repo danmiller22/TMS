@@ -2,11 +2,10 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { RequireAuth } from "./lib/auth";
-
 import { Header } from "./components/Header";
 import { Dashboard } from "./ui/screens/Dashboard";
 
-// ВАЖНО: импорт из pages/trucks
+// ВАЖНО: именно pages/trucks
 import Trucks from "./pages/trucks/Trucks";
 
 import Trailers from "./ui/screens/Trailers";
