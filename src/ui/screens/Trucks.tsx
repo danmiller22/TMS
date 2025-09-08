@@ -1,141 +1,143 @@
 // src/ui/screens/Trucks.tsx
-import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
-import { useTms, Truck } from "../../store/tms";
+import React, { useMemo, useState } from "react";
+import useTms, { Truck } from "../../store/tms";
+import { syncSamsara } from "../../lib/samsara";
 
-const inputCls =
-  "mt-1 w-full rounded-xl border border-border px-3 py-2 bg-background text-foreground " +
-  "placeholder:text-foreground/50 focus:outline-none focus:ring-2 focus:ring-white/10";
-
-function TruckEditor({
-  initial,
-  onSave,
-  onCancel,
-}: {
-  initial: Truck;
-  onSave: (t: Truck) => void;
-  onCancel: () => void;
-}) {
-  const [id, setId] = useState(initial.id || "");
-  const canSave = id.trim().length > 0;
-  return (
-    <div className="glass rounded-2xl p-4 border border-border">
-      <h2 className="text-lg font-semibold mb-3">{initial.id ? `Edit ${initial.id}` : "New truck"}</h2>
-      <label className="text-sm">
-        Unit #
-        <input
-          className={inputCls}
-          placeholder="e.g. 4521"
-          value={id}
-          onChange={(e) => setId(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && canSave && onSave({ id: id.trim() })}
-        />
-      </label>
-
-      <div className="mt-4 flex gap-2">
-        <button
-          className="btn btn-primary disabled:opacity-50"
-          onClick={() => onSave({ id: id.trim() })}
-          disabled={!canSave}
-        >
-          Save
-        </button>
-        <button className="btn btn-ghost" onClick={onCancel}>
-          Cancel
-        </button>
-      </div>
-    </div>
-  );
+function fmtOdo(m?: number | null, units: "imperial" | "metric" = "imperial") {
+  if (m == null) return "-";
+  return units === "imperial" ? `${(m / 1609.344).toFixed(1)} mi` : `${(m / 1000).toFixed(1)} km`;
 }
 
-export default function Trucks() {
-  const { trucks, upsertTruck, removeTruck, upsertManyTrucks } = useTms();
-  const [editing, setEditing] = useState<Truck | null>(null);
-  const [syncing, setSyncing] = useState(false);
-  const didInit = useRef(false);
+const Trucks: React.FC = () => {
+  const { trucks, upsertTruck, removeTruck, upsertManyTrucks, settings } = useTms();
+  const [q, setQ] = useState("");
+  const [edit, setEdit] = useState<Truck | null>(null);
+  const units = settings?.units ?? "imperial";
 
-  async function syncFromSamsara(silent = false) {
+  const list = useMemo(() => {
+    const n = q.trim().toLowerCase();
+    if (!n) return trucks;
+    return trucks.filter((t) =>
+      [t.id, t.vin ?? "", t.plate ?? "", t.make ?? "", t.name ?? ""]
+        .join(" ")
+        .toLowerCase()
+        .includes(n)
+    );
+  }, [trucks, q]);
+
+  async function syncFromSamsara() {
     try {
-      setSyncing(true);
-      const res = await fetch("http://localhost:7070/api/samsara/sync");
-      if (!res.ok) throw new Error(await res.text());
-      const data = await res.json();
-      if (Array.isArray(data.trucks)) upsertManyTrucks(data.trucks);
-      if (!silent) alert(`Synced ${data.trucks?.length ?? 0} trucks`);
+      const idSource = settings?.samsaraIdSource ?? "name";
+      const data = await syncSamsara(idSource);
+      upsertManyTrucks(data.trucks || []);
+      alert(`Synced ${data.trucks?.length ?? 0} trucks`);
     } catch (e: any) {
-      if (!silent) alert("Sync error: " + (e?.message || e));
-    } finally {
-      setSyncing(false);
+      alert(`Sync error: ${e?.message || e}`);
     }
   }
 
-  // Автосинк при заходе (один раз)
-  useEffect(() => {
-    if (didInit.current) return;
-    didInit.current = true;
-    if (trucks.length === 0) syncFromSamsara(true);
-  }, [trucks.length]);
-
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Trucks</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-xl font-semibold">Trucks</h1>
         <div className="flex gap-2">
-          <button className="btn btn-ghost" onClick={() => syncFromSamsara()} disabled={syncing}>
-            {syncing ? "Syncing…" : "Sync from Samsara"}
+          <input
+            className="input"
+            placeholder="Search…"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+          <button className="btn btn-primary" onClick={syncFromSamsara}>
+            Sync from Samsara
           </button>
-          <button className="btn btn-primary" onClick={() => setEditing({ id: "" })}>
+          <button className="btn" onClick={() => setEdit({ id: "", vin: "", make: "", odo: 0 })}>
             Add
           </button>
         </div>
       </div>
 
-      {editing && (
-        <TruckEditor
-          initial={editing}
-          onSave={(t) => {
-            upsertTruck(t);
-            setEditing(null);
-          }}
-          onCancel={() => setEditing(null)}
-        />
-      )}
-
-      {/* Компактная сетка для сотен юнитов */}
-      <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-        {trucks.map((t) => (
-          <motion.div
+      {/* List */}
+      <div className="grid gap-3">
+        {list.map((t) => (
+          <div
             key={t.id}
-            layout
-            className="glass rounded-xl p-3 border border-border"
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ type: "spring", stiffness: 320, damping: 28 }}
+            className="p-4 rounded-xl border bg-white shadow flex items-center justify-between"
           >
-            <div className="text-base font-semibold">#{t.id}</div>
-            <div className="text-xs opacity-70 mt-1">{t.vin ? `VIN ${t.vin}` : "VIN —"}</div>
-            <div className="text-xs opacity-70">{t.odo != null ? `ODO ${t.odo}` : "ODO —"}</div>
-            <div className="text-xs opacity-70">{t.status || "Status —"}</div>
-            <div className="text-xs opacity-70">{t.location ? `Location ${t.location}` : "Location —"}</div>
-            <div className="text-xs opacity-70">
-              {t.lastSeen ? `Updated ${new Date(t.lastSeen).toLocaleString()}` : ""}
+            <div>
+              <div className="font-semibold">
+                {t.id} • {t.make ?? "-"}
+              </div>
+              <div className="text-sm opacity-70">
+                VIN: {t.vin ?? "-"} • Plate: {t.plate ?? "-"} • Odo: {fmtOdo(t.odo, units)}
+              </div>
             </div>
-
-            <div className="mt-3 flex gap-2">
-              <button className="btn btn-ghost px-3 py-1.5 text-sm" onClick={() => setEditing({ id: t.id })}>
+            <div className="flex gap-2">
+              <button className="btn" onClick={() => setEdit(t)}>
                 Edit
               </button>
-              <button
-                className="px-3 py-1.5 text-sm rounded-xl bg-red-500/90 hover:bg-red-500 text-white"
-                onClick={() => removeTruck(t.id)}
-              >
+              <button className="btn" onClick={() => removeTruck(t.id)}>
                 Delete
               </button>
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
+
+      {/* Edit/Add block */}
+      {edit && (
+        <div className="p-4 rounded-xl border bg-white shadow space-y-2">
+          <div className="grid md:grid-cols-5 gap-2">
+            <input
+              className="input"
+              placeholder="ID"
+              value={edit.id}
+              onChange={(e) => setEdit({ ...edit, id: e.target.value })}
+            />
+            <input
+              className="input"
+              placeholder="VIN"
+              value={edit.vin ?? ""}
+              onChange={(e) => setEdit({ ...edit, vin: e.target.value })}
+            />
+            <input
+              className="input"
+              placeholder="Make"
+              value={edit.make ?? ""}
+              onChange={(e) => setEdit({ ...edit, make: e.target.value })}
+            />
+            <input
+              className="input"
+              placeholder="Plate"
+              value={edit.plate ?? ""}
+              onChange={(e) => setEdit({ ...edit, plate: e.target.value })}
+            />
+            <input
+              className="input"
+              type="number"
+              placeholder="Odometer (meters)"
+              value={edit.odo ?? 0}
+              onChange={(e) => setEdit({ ...edit, odo: Number(e.target.value) })}
+            />
+          </div>
+          <div className="flex gap-2">
+            <button
+              className="btn btn-primary"
+              onClick={() => {
+                upsertTruck(edit);
+                setEdit(null);
+              }}
+            >
+              Save
+            </button>
+            <button className="btn" onClick={() => setEdit(null)}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+};
+
 export { Trucks };
+export default Trucks;

@@ -1,42 +1,44 @@
 // src/ui/screens/Settings.tsx
-import { useState } from "react";
-import { useTms } from "../../store/tms";
+import React, { useState } from "react";
+import useTms from "../../store/tms";
 
-const input =
-  "rounded-xl border border-border bg-background text-foreground placeholder:text-foreground/50 px-3 py-2 w-full";
-
-export function Settings() {
-  const { settings, setSettings } = useTms();
+const Settings: React.FC = () => {
+  const { settings, setSettings, clearAll } = useTms();
   const [src, setSrc] = useState<"name" | "licensePlate">(settings.samsaraIdSource || "name");
-
-  const save = () => {
-    setSettings({ samsaraIdSource: src });
-    alert("Saved.");
-  };
+  const [docsUrl, setDocsUrl] = useState(settings.trailerDocsUrl || "");
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Settings</h1>
+      <h1 className="text-xl font-semibold">Settings</h1>
 
-      <div className="glass rounded-2xl p-5 border border-border space-y-3">
-        <div className="text-lg font-semibold">Samsara</div>
-        <div className="text-sm opacity-70">
-          Where to read the unit number from during sync: <code>name</code> (usually unit #) or{" "}
-          <code>licensePlate</code> (if your unit # equals the plate).
+      <div className="grid md:grid-cols-3 gap-3">
+        <div className="p-4 rounded-xl border bg-white shadow">
+          <div className="font-semibold mb-2">Samsara ID Source</div>
+          <select className="input" value={src} onChange={e => setSrc(e.target.value as any)}>
+            <option value="name">Vehicle name</option>
+            <option value="licensePlate">License plate</option>
+          </select>
+          <button className="btn btn-primary mt-2" onClick={() => setSettings({ samsaraIdSource: src })}>
+            Save
+          </button>
         </div>
-        <div className="flex items-center gap-3">
-          <label className="text-sm">
-            Source
-            <select className={input + " mt-1"} value={src} onChange={(e) => setSrc(e.target.value as any)}>
-              <option value="name">name</option>
-              <option value="licensePlate">licensePlate</option>
-            </select>
-          </label>
+
+        <div className="p-4 rounded-xl border bg-white shadow">
+          <div className="font-semibold mb-2">Trailer documents URL</div>
+          <input className="input" placeholder="https://..." value={docsUrl} onChange={e => setDocsUrl(e.target.value)} />
+          <button className="btn mt-2" onClick={() => setSettings({ trailerDocsUrl: docsUrl.trim() })}>
+            Save
+          </button>
         </div>
-        <button className="btn btn-primary" onClick={save}>
-          Save
-        </button>
+
+        <div className="p-4 rounded-xl border bg-white shadow">
+          <div className="font-semibold mb-2">Danger zone</div>
+          <button className="btn" onClick={() => clearAll()}>Clear all local data</button>
+        </div>
       </div>
     </div>
   );
-}
+};
+
+export { Settings };
+export default Settings;
