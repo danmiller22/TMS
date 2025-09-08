@@ -1,6 +1,6 @@
 // src/App.tsx
 import React, { useState } from "react";
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { RequireAuth } from "./lib/auth";
 import { Header } from "./components/Header";
 import { Dashboard } from "./ui/screens/Dashboard";
@@ -81,27 +81,25 @@ const MainLayout: React.FC = () => (
 );
 
 const App: React.FC = () => (
-  <BrowserRouter>
-    <Routes>
-      <Route path="/signin" element={<Signin />} />
-      <Route
-        element={
-          <RequireAuth>
-            <MainLayout />
-          </RequireAuth>
-        }
-      >
-        <Route index element={<Dashboard />} />
-        <Route path="/trucks" element={<TrucksPage />} />
-        <Route path="/trailers" element={<Trailers />} />
-        <Route path="/cases" element={<Cases />} />
-        <Route path="/analytics" element={<Analytics />} />
-        <Route path="/finance" element={<Finance />} />
-        <Route path="/settings" element={<Settings />} />
-      </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
-  </BrowserRouter>
+  <Routes>
+    <Route path="/signin" element={<Signin />} />
+    <Route
+      element={
+        <RequireAuth>
+          <MainLayout />
+        </RequireAuth>
+      }
+    >
+      <Route index element={<Dashboard />} />
+      <Route path="/trucks" element={<TrucksPage />} />
+      <Route path="/trailers" element={<Trailers />} />
+      <Route path="/cases" element={<Cases />} />
+      <Route path="/analytics" element={<Analytics />} />
+      <Route path="/finance" element={<Finance />} />
+      <Route path="/settings" element={<Settings />} />
+    </Route>
+    <Route path="*" element={<Navigate to="/" replace />} />
+  </Routes>
 );
 
 export default App;

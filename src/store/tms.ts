@@ -6,7 +6,6 @@ import { create } from "zustand";
 export type CaseStage = "New" | "Diagnosing" | "Repair" | "QA" | "Closed";
 export const CASE_STAGES: CaseStage[] = ["New", "Diagnosing", "Repair", "QA", "Closed"];
 
-// в проекте встречается "Urgent" — добавляем в тип
 export type Urgency = "Low" | "Medium" | "High" | "Critical" | "Urgent";
 
 export type InvoiceFile = {
@@ -16,7 +15,7 @@ export type InvoiceFile = {
   docId?: string;
   dataUrl?: string;
   mime?: string;
-  size?: number; // pages/cases/Cases.tsx ожидает это поле
+  size?: number;
 };
 
 export type Truck = {
@@ -41,7 +40,7 @@ export type Trailer = {
 
 export type TimelineEntry = {
   text: string;
-  at?: string; // встречаются оба названия
+  at?: string;
   ts?: string;
 };
 
@@ -59,26 +58,25 @@ export type CaseItem = {
   invoice?: InvoiceFile;
 };
 
-// Ledger: подгон под pages/* и ui/* (type/ref/category используются в коде)
 export type LedgerEntry = {
-  id?: string;           // делаем опц., т.к. в коде иногда не передаётся
-  date?: string;         // опц.; если нет — заполним сейчас ISO-датой
+  id?: string;
+  date?: string;
   amount: number;
   currency?: string;
   note?: string;
 
-  type?: "expense" | "income" | string; // фильтрация по .type==="expense"
-  kind?: string;        // на всякий
-  ref?: string;         // YMD-строка для группировок
-  category?: string;    // для таблиц/дашборда
+  type?: "expense" | "income" | string;
+  kind?: string;
+  ref?: string;
+  category?: string;
   caseId?: string;
   assetId?: string;
 };
 
 export type Settings = {
   idSource?: "id" | "vin" | "plate" | "name";
-  samsaraIdSource?: "name" | "licensePlate"; // используется в Settings.tsx
-  trailerDocsUrl?: string;                   // используется в Trailers.tsx
+  samsaraIdSource?: "name" | "licensePlate";
+  trailerDocsUrl?: string;
   units?: "imperial" | "metric";
   theme?: "light" | "dark" | "auto";
   companyName?: string;
@@ -98,7 +96,7 @@ export type TmsState = {
   updateTruck: (id: string, patch: Partial<Truck>) => void;
   deleteTruck: (id: string) => void;
 
-  // aliases под вызовы из страниц/скринов
+  // aliases
   upsertTruck: (t: Truck) => void;
   removeTruck: (id: string) => void;
   upsertManyTrucks: (arr: Truck[]) => void;
@@ -121,7 +119,7 @@ export type TmsState = {
   addCaseNote: (id: string, text: string) => void;
   attachInvoice: (id: string, invoice: InvoiceFile) => void;
 
-  // Ledger (принимаем частичный объект и добиваем недостающее)
+  // Ledger
   addLedger: (e: Partial<LedgerEntry> & { amount: number }) => void;
 
   // Settings
@@ -186,9 +184,7 @@ export const useTms = create<TmsState>((set, get) => ({
   upsertTrailer: (t) =>
     set((s) => {
       const exists = s.trailers.some((x) => x.id === t.id);
-      return {
-        trailers: exists ? s.trailers.map((x) => (x.id === t.id ? { ...x, ...t } : x)) : [...s.trailers, t],
-      };
+      return { trailers: exists ? s.trailers.map((x) => (x.id === t.id ? { ...x, ...t } : x)) : [...s.trailers, t] };
     }),
   removeTrailer: (id) =>
     set((s) => ({ trailers: s.trailers.filter((t) => t.id !== id) })),
@@ -234,7 +230,7 @@ export const useTms = create<TmsState>((set, get) => ({
               stage,
               timeline: [
                 ...c.timeline,
-                { at: new Date().toISOString(), ts: new Date().toISOString(), text: `Stage → ${stage}` },
+                { at: new Date().toISOString(), ts: new Date().toISOString(), text: `Stage: ${stage}` },
               ],
             }
           : c
@@ -253,7 +249,7 @@ export const useTms = create<TmsState>((set, get) => ({
           stage: newStage,
           timeline: [
             ...c.timeline,
-            { at: new Date().toISOString(), ts: new Date().toISOString(), text: `Stage → ${newStage}` },
+            { at: new Date().toISOString(), ts: new Date().toISOString(), text: `Stage: ${newStage}` },
           ],
         };
       }),
@@ -284,7 +280,6 @@ export const useTms = create<TmsState>((set, get) => ({
   addLedger: (e) =>
     set((s) => {
       const genId = () => "L-" + Math.random().toString(36).slice(2, 10);
-      // если пришёл ref в формате YYYY-MM-DD — используем для даты
       const isoFromRef = (ref?: string) => (ref ? new Date(ref).toISOString() : undefined);
 
       const entry: LedgerEntry = {
@@ -315,3 +310,4 @@ export const useTms = create<TmsState>((set, get) => ({
 }));
 
 export default useTms;
+

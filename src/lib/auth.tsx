@@ -25,3 +25,4 @@ export const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children 
   if (!has) return null;
   return <>{children}</>;
 };
+
