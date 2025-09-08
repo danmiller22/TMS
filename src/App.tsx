@@ -9,6 +9,7 @@ import { Dashboard } from "./ui/screens/Dashboard";
 
 // остальные можно как default (у них есть и default, и именованные)
 import Trucks from "./ui/screens/Trucks";
+
 import Trailers from "./ui/screens/Trailers";
 import Cases from "./ui/screens/Cases";
 import Analytics from "./ui/screens/Analytics";
