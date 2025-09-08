@@ -1,6 +1,6 @@
 // src/ui/screens/Dashboard.tsx
 import { useMemo } from "react";
-import { useTms } from "../../store/tms";
+import useTms from "../../store/tms";
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
 } from "recharts";

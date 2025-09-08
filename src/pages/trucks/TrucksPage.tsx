@@ -15,7 +15,7 @@ function fmtOdo(m?: number | null, units: "imperial" | "metric" = "imperial") {
 }
 
 const TrucksPage: React.FC = () => {
-  console.log("✨ Trucks PAGE v2 (pages/trucks/TrucksPage.tsx) loaded");
+  console.log("Trucks PAGE (pages/trucks/TrucksPage.tsx) loaded");
 
   const { trucks, upsertTruck, removeTruck, upsertManyTrucks, settings } = useTms();
   const [q, setQ] = useState("");
@@ -23,7 +23,6 @@ const TrucksPage: React.FC = () => {
   const [busy, setBusy] = useState(false);
   const units = settings?.units ?? "imperial";
 
-  // автозагрузка из БД при заходе
   useEffect(() => {
     (async () => {
       try {
@@ -51,7 +50,7 @@ const TrucksPage: React.FC = () => {
       const idSource = settings?.samsaraIdSource ?? "name";
       const data = await syncSamsara(idSource);
       upsertManyTrucks(data.trucks || []);
-      await dbUpsertTrucks(data.trucks || []); // сохранить в БД
+      await dbUpsertTrucks(data.trucks || []);
       alert(`Synced & saved ${data.trucks?.length ?? 0} trucks`);
     } catch (e: any) {
       alert(`Sync error: ${e?.message || e}`);
@@ -114,10 +113,10 @@ const TrucksPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-xl font-semibold">
-          Trucks <span className="text-xs opacity-70 align-middle">• DB linked ★</span>
+          Trucks <span className="text-xs opacity-70 align-middle">DB linked</span>
         </h1>
         <div className="flex flex-wrap gap-2">
-          <input className="input" placeholder="Search…" value={q} onChange={(e) => setQ(e.target.value)} />
+          <input className="input" placeholder="Search..." value={q} onChange={(e) => setQ(e.target.value)} />
           <button className="btn" disabled={busy} onClick={loadFromDb}>Load from DB</button>
           <button className="btn" disabled={busy} onClick={saveAllToDb}>Save all to DB</button>
           <button className="btn btn-primary" disabled={busy} onClick={syncFromSamsara}>Sync from Samsara</button>
@@ -129,7 +128,7 @@ const TrucksPage: React.FC = () => {
         {list.map((t) => (
           <div key={t.id} className="p-4 rounded-xl border bg-white/5 shadow flex items-center justify-between">
             <div>
-              <div className="font-semibold">{t.id} • {t.make ?? "-"}</div>
+              <div className="font-semibold">{t.id} - {t.make ?? "-"}</div>
               <div className="text-sm opacity-70">VIN: {t.vin ?? "-"} • Plate: {t.plate ?? "-"} • Odo: {fmtOdo(t.odo, units)}</div>
             </div>
             <div className="flex gap-2">
@@ -160,3 +159,4 @@ const TrucksPage: React.FC = () => {
 };
 
 export default TrucksPage;
+

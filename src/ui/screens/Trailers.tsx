@@ -1,6 +1,6 @@
 // src/ui/screens/Trailers.tsx
 import { useEffect, useRef, useState } from "react";
-import { useTms, Trailer } from "../../store/tms";
+import useTms, { Trailer } from "../../store/tms";
 import { motion } from "framer-motion";
 
 const inputCls =

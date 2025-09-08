@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { getInitialTheme, applyTheme, Theme } from '../lib/theme'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { useTms } from '../store/tms'
+import useTms from '../store/tms'
 
 function useHotkey(k: string, cb: () => void) {
   useEffect(() => {
@@ -45,7 +45,7 @@ function SearchModal({ open, onClose }: { open: boolean; onClose: () => void }) 
           <motion.div initial={{ y: 8, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 8, opacity: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 22 }} className="relative z-10 w-full max-w-xl rounded-2xl border border-border p-4 glass">
             <div className="flex items-center gap-2 rounded-2xl bg-secondary px-3 py-2">
               <Search className="size-4 opacity-60" />
-              <input ref={inputRef} value={q} onChange={e => setQ(e.target.value)} placeholder="Search trucks / trailers / cases…" className="bg-transparent outline-none text-sm w-full" />
+              <input ref={inputRef} value={q} onChange={e => setQ(e.target.value)} placeholder="Search trucks / trailers / cases..." className="bg-transparent outline-none text-sm w-full" />
             </div>
             <div className="mt-3">
               {results.length === 0 ? (
@@ -88,7 +88,7 @@ export function Header() {
         <div className="flex items-center gap-3 mr-auto">
           <img src="/logo.png" alt="Logo" className="w-7 h-7 rounded-xl shadow-[0_12px_30px_rgba(0,0,0,.12)]" />
           <div className="text-sm">
-            <b>US Team Fleet — TMS</b> <span className="ml-2 chip">Free</span>
+            <b>US Team Fleet - TMS</b> <span className="ml-2 chip">Free</span>
           </div>
         </div>
 
@@ -109,4 +109,3 @@ export function Header() {
     </div>
   );
 }
-
